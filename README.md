@@ -35,6 +35,38 @@ App 的上传鉴权（JWE 加密 + RSA 封装）全在客户端算好后由服�
 
 ---
 
+## Windows 本地网页控制台
+
+仓库现在附带一个跨平台的本地网页控制台，Windows 上双击
+**`启动网页控制台.bat`** 即可。首次运行会创建 `.venv` 并安装
+`mitmproxy` 与二维码依赖，然后在浏览器访问 `http://127.0.0.1:8765`。
+
+网页控制台替代了原来的 macOS `.command` 外壳：可以在浏览器里选图、预览、自动压缩到
+1KB~1MB、启动/停止代理、查看实时日志，并显示 WireGuard 配置二维码。
+
+如果系统没有 Python 3.12 或更高版本，请先安装 Python，并勾选 **Add Python to PATH**。
+启动器也会检测本机已有的 Codex Python；可用时会用它创建项目独立的 `.venv`。
+如果需要指定其他 Python，可设置环境变量 `IDPHOTO_PYTHON` 为其 `python.exe` 完整路径。
+Windows 防火墙若询问是否允许 Python 监听，请允许专用网络访问。WireGuard 默认使用
+UDP `51820`。
+
+启动器支持 `-Check`（检查环境但不启动网页）和 `-Port 8766`（更换网页端口）。
+Windows 启动文件需要保留 CRLF 换行，PowerShell 文件需要保留 UTF-8 BOM；仓库已添加换行规则。
+
+也可以手动启动：
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe web_app.py
+```
+
+网页控制台默认只监听本机 `127.0.0.1`。手机和电脑需要处于同一个可达网络；网页启动
+WireGuard 后，用手机 WireGuard App 扫描二维码并打开隧道。电脑仍只修改
+`chsi-idphotosrv.oss-cn-shanghai.aliyuncs.com` 的照片上传请求，替换失败时会掐断该请求。
+
+---
+
 ## 快速开始
 
 ### 1. 启动代理
@@ -114,7 +146,7 @@ App 还要走完 `ossrs / checkst / confirm` 几步。
 
 **App 抓不到流量？**
 App 自带网络栈，不读系统 HTTP 代理。本方案用 mitmproxy 的
-`wireguard` 模式下沉到 VPN 层解决，不要改成普通 `-p 8080` 代理模式。
+`wireguard` 模式下沉到 VPN 层。不要只配置 Android Wi-Fi 的普通 HTTP 代理。
 
 **手机连不上隧道？**
 1. 确认手机和 Mac 在同一个 Wi-Fi；

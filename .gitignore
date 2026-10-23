@@ -2,6 +2,9 @@
 wg-client.conf
 wg-client-qr.png
 *.log
+.runtime/
+.build-portable/
+dist/
 
 # Python
 __pycache__/

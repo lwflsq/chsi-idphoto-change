@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>学信网证件照换图代理</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">✦</div>
+        <div>
+          <div class="eyebrow">LOCAL CONSOLE</div>
+          <h1>证件照换图代理</h1>
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <span class="local-pill"><span class="pulse-dot"></span>本地控制台</span>
+        <span class="version">WireGuard</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="notice-card">
+        <div class="notice-icon">盾</div>
+        <div>
+          <strong>请只用于自己的账号和自己的照片</strong>
+          <p>代理会在图片离开手机前替换上传内容；替换失败时会直接拦截请求，不会放行现场拍摄的原图。</p>
+        </div>
+        <div class="notice-tag">FAIL-SAFE ENABLED</div>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="panel photo-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-label">01 / PHOTO</span>
+              <h2>准备证件照</h2>
+            </div>
+            <span class="panel-status" id="photoStatus">等待选择</span>
+          </div>
+
+          <input id="fileInput" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden>
+          <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="选择证件照">
+            <div class="dropzone-art">
+              <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+              <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+              <div class="upload-symbol">↑</div>
+            </div>
+            <strong>拖入照片，或点击选择</strong>
+            <span>JPG / PNG / WEBP · 1KB～1MB</span>
+            <button id="chooseButton" class="button button-ghost" type="button">选择文件</button>
+          </div>
+
+          <div id="photoInfo" class="photo-info hidden">
+            <div class="preview-frame"><img id="photoPreview" alt="证件照预览"></div>
+            <div class="photo-details">
+              <div class="file-name" id="fileName">—</div>
+              <div class="file-size" id="fileSize">—</div>
+              <div class="size-meter"><span id="sizeMeterFill"></span></div>
+              <div class="hint" id="compressionHint">—</div>
+              <button id="replaceButton" class="text-button" type="button">更换照片</button>
+            </div>
+          </div>
+
+          <div class="checksum-row hidden" id="checksumRow">
+            <span class="checksum-label">本地文件 MD5</span>
+            <code id="checksumValue">—</code>
+          </div>
+        </section>
+
+        <section class="panel control-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-label">02 / PROXY</span>
+              <h2>启动本地代理</h2>
+            </div>
+            <span id="proxyBadge" class="status-badge idle"><span></span>未运行</span>
+          </div>
+
+          <label class="field mode-field">
+            <span>连接方式</span>
+            <input type="text" value="WireGuard" readonly>
+            <small>手机使用 WireGuard App 扫码导入隧道。</small>
+          </label>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>电脑局域网 IP</span>
+              <input id="ipInput" type="text" inputmode="decimal" placeholder="192.168.1.20">
+              <small>手机和电脑需要在同一个可达网络</small>
+            </label>
+            <label class="field field-port">
+              <span>WireGuard 端口</span>
+              <input id="portInput" type="number" min="1" max="65535" value="51820">
+              <small>默认端口</small>
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button id="startButton" class="button button-primary" type="button">
+              <span class="button-icon">▶</span> 启动代理
+            </button>
+            <button id="stopButton" class="button button-danger" type="button" disabled>
+              <span class="button-icon">■</span> 停止
+            </button>
+          </div>
+
+          <div class="running-note" id="runningNote">
+            <span class="note-dot"></span>
+            <span>启动后保持此页面和代理运行，直到 App 完成确认。</span>
+          </div>
+        </section>
+      </div>
+
+      <div class="lower-grid">
+        <section class="panel phone-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-label">03 / PHONE</span>
+              <h2>连接手机</h2>
+            </div>
+            <span class="panel-status" id="qrStatus">等待代理启动</span>
+          </div>
+          <div class="phone-content">
+            <div class="qr-wrap" id="qrWrap">
+              <div class="qr-placeholder"><span>⌁</span><small>启动代理后生成</small></div>
+            </div>
+            <div class="phone-instructions">
+              <div id="wireguardSteps">
+                <div class="step"><span>1</span><p>打开手机上的 <b>WireGuard</b>。</p></div>
+                <div class="step"><span>2</span><p>添加隧道并扫描左侧二维码，或导入下方配置。</p></div>
+                <div class="step"><span>3</span><p>打开隧道开关，看到日志中的手机连接提示。</p></div>
+              </div>
+              <div class="config-actions">
+                <button id="copyButton" class="button button-small" type="button" disabled>复制配置</button>
+                <button id="downloadButton" class="button button-small button-ghost" type="button" disabled>下载 .conf</button>
+              </div>
+            </div>
+          </div>
+          <p id="phoneHelp" class="phone-help">WireGuard 会将手机 IPv4 流量送入电脑；完成 App 内确认后请关闭隧道。</p>
+          <textarea id="configText" class="config-text" readonly aria-label="WireGuard 配置" placeholder="WireGuard 配置会显示在这里"></textarea>
+        </section>
+
+        <section class="panel log-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-label">04 / ACTIVITY</span>
+              <h2>运行日志</h2>
+            </div>
+            <span class="live-label"><span class="live-dot"></span>LIVE</span>
+          </div>
+          <div id="logBox" class="log-box"><div class="log-empty">暂无日志，启动代理后会显示运行状态。</div></div>
+          <div class="log-footer"><span>实时刷新</span><span id="logCount">0 条</span></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <span>本地浏览器控制台 · 图片只保存于项目运行目录</span>
+      <span>ETag ↔ MD5 校验开启</span>
+    </footer>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

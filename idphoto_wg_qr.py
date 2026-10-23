@@ -19,6 +19,7 @@ mitmproxy 的 TUI 版才会显示二维码；用 mitmdump 后台跑时看不到�
 import base64
 import json
 import os
+import socket
 import subprocess
 import sys
 
@@ -107,17 +108,61 @@ def save_qr(conf: str, path: str) -> bool:
 
 
 def local_ip() -> str:
-    """取本机局域网 IP：优先 en0（Wi-Fi），再 en1（有线/雷雳）。"""
-    for iface in ("en0", "en1"):
-        try:
-            out = subprocess.run(["ipconfig", "getifaddr", iface],
-                                 capture_output=True, text=True, timeout=5)
-            ip = out.stdout.strip()
-            if ip:
+    """取本机可被手机访问的局域网 IP，兼容 macOS / Windows / Linux。"""
+    # UDP connect 不会真正发包，但能让系统选择当前出网网卡。
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("8.8.8.8", 80))
+            ip = sock.getsockname()[0]
+            if ip and not ip.startswith("127."):
                 return ip
-        except Exception:
-            pass
+    except OSError:
+        pass
+
+    if sys.platform == "darwin":
+        for iface in ("en0", "en1"):
+            try:
+                out = subprocess.run(["ipconfig", "getifaddr", iface],
+                                     capture_output=True, text=True, timeout=5)
+                ip = out.stdout.strip()
+                if ip:
+                    return ip
+            except Exception:
+                pass
+
+    try:
+        for ip in socket.gethostbyname_ex(socket.gethostname())[2]:
+            if ip and not ip.startswith("127."):
+                return ip
+    except OSError:
+        pass
     return ""
+
+
+def generate_client_config(ip: str, port: str = "51820", out_conf: str = OUT_CONF,
+                           out_qr: str = OUT_QR) -> bool:
+    """从 mitmproxy 的 wireguard.conf 生成手机配置，返回二维码是否生成成功。"""
+    if not os.path.exists(WG_CONF):
+        raise FileNotFoundError(f"找不到 {WG_CONF}")
+
+    with open(WG_CONF, encoding="utf-8") as f:
+        keys = json.load(f)
+    server_priv = keys["server_key"]
+    client_priv = keys["client_key"]
+    server_pub = x25519_pub(server_priv)
+    conf = f"""[Interface]
+PrivateKey = {client_priv}
+Address = 10.0.0.1/32
+DNS = 10.0.0.53
+
+[Peer]
+PublicKey = {server_pub}
+AllowedIPs = 0.0.0.0/0
+Endpoint = {ip}:{port}
+"""
+    with open(out_conf, "w", encoding="utf-8") as f:
+        f.write(conf)
+    return save_qr(conf, out_qr)
 
 
 def main() -> int:
@@ -135,34 +180,12 @@ def main() -> int:
         if i + 1 < len(argv):
             port = argv[i + 1]
 
-    if not os.path.exists(WG_CONF):
+    try:
+        qr_ok = generate_client_config(ip, port, OUT_CONF, OUT_QR)
+    except FileNotFoundError:
         print(f"✗ 找不到 {WG_CONF}")
-        print("  先运行一次 mitmproxy 的 wireguard 模式（启动换图代理.command）让它生成密钥。")
+        print("  先运行一次 mitmproxy 的 wireguard 模式让它生成密钥。")
         return 1
-
-    with open(WG_CONF, encoding="utf-8") as f:
-        keys = json.load(f)
-    server_priv = keys["server_key"]
-    client_priv = keys["client_key"]
-
-    # ★ 关键：客户端 [Peer] PublicKey 必须是【服务端】公钥。
-    #   WireGuardServerInstance 里那个 pubkey 字段其实是客户端公钥，别用错。
-    server_pub = x25519_pub(server_priv)
-
-    conf = f"""[Interface]
-PrivateKey = {client_priv}
-Address = 10.0.0.1/32
-DNS = 10.0.0.53
-
-[Peer]
-PublicKey = {server_pub}
-AllowedIPs = 0.0.0.0/0
-Endpoint = {ip}:{port}
-"""
-    with open(OUT_CONF, "w", encoding="utf-8") as f:
-        f.write(conf)
-
-    qr_ok = save_qr(conf, OUT_QR)
 
     print(f"  Endpoint   : {ip}:{port}")
     print(f"  AllowedIPs : 0.0.0.0/0（全部流量走隧道）")

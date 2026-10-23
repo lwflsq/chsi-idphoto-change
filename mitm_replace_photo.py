@@ -43,7 +43,8 @@ MIN_SIZE, MAX_SIZE = 1024, 1048576   # policy 里的 content-length-range
 # 由 14 次真实上传反推得到——替换后 body = 本地图字节 + 3763，一次不差。
 # 用于自检：偏离说明 replacements 或字段名结构有变，值得警惕。
 FORM_OVERHEAD = 3763
-LOG_FILE = os.path.expanduser("~/idphoto_replace.log")
+# 网页控制台会把日志放在项目自己的运行目录；命令行用法仍默认写入用户目录。
+LOG_FILE = os.path.expanduser(os.environ.get("IDPHOTO_LOG_FILE", "~/idphoto_replace.log"))
 IMG_EXT = ("*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG")
 
 
@@ -209,7 +210,7 @@ def response(flow: http.HTTPFlow) -> None:
             ctx_log(flow, "osssign 响应已存到 ~/idphoto_osssign.json")
         except Exception as e:
             ctx_log(flow, f"保存失败: {e}")
-    elif TARGET_HOST in flow.request.pretty_host:
+    elif TARGET_HOST in flow.request.pretty_host and flow.request.method == "POST":
         code = flow.response.status_code
         # 注意：ETag 要从未截断的全文里取，打印时才截断
         full = ""
