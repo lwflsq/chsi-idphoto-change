@@ -492,10 +492,15 @@ def main() -> int:
 
 
 def entrypoint() -> int:
+    if "--check-mitmdump" in sys.argv[1:]:
+        # 打包阶段使用：导入完整入口即可发现 PyInstaller 是否漏收 Windows 依赖。
+        from mitmproxy.tools.main import mitmdump as _mitmdump
+        print(f"mitmdump import ok: {_mitmdump.__module__}")
+        return 0
     if "--mitmdump" in sys.argv[1:]:
         sys.argv.remove("--mitmdump")
         from mitmproxy.tools.main import mitmdump
-        mitmdump()
+        mitmdump(sys.argv[1:])
         return 0
     return main()
 

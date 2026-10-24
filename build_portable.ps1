@@ -62,8 +62,7 @@ $PyInstallerDist = Join-Path $BuildRoot 'dist'
     --add-data "$ProjectRoot\mitm_replace_photo.py;." `
     --collect-all mitmproxy `
     --collect-all aioquic `
-    --exclude-module pydivert `
-    --exclude-module mitmproxy_windows `
+    --collect-all mitmproxy_windows `
     --hidden-import mitmproxy.tools.main `
     "$ProjectRoot\web_app.py"
 
@@ -72,6 +71,31 @@ if ($LASTEXITCODE -ne 0) { throw 'PyInstaller 构建失败。' }
 Move-Item -LiteralPath (Join-Path $PyInstallerDist 'chsi-idphoto-swap') -Destination $PackageDir
 Copy-Item -LiteralPath (Join-Path $ProjectRoot 'PORTABLE_README.txt') -Destination (Join-Path $PackageDir '使用说明.txt')
 Set-Content -LiteralPath (Join-Path $PackageDir '启动.bat') -Encoding Ascii -Value "@echo off`r`ncd /d `"%~dp0`"`r`nchsi-idphoto-swap.exe`r`npause`r`n"
+
+# 在不继承外部 Python 路径的环境中加载内置 mitmdump；缺少冻结依赖时立即终止构建。
+$SavedPythonPath = $env:PYTHONPATH
+$SavedPythonHome = $env:PYTHONHOME
+$SmokeLog = Join-Path $BuildRoot 'mitmdump-smoke.log'
+try {
+    Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+    Remove-Item Env:PYTHONHOME -ErrorAction SilentlyContinue
+    Push-Location $PackageDir
+    try {
+        & (Join-Path $PackageDir 'chsi-idphoto-swap.exe') --check-mitmdump *> $SmokeLog
+        $SmokeExitCode = $LASTEXITCODE
+    }
+    finally {
+        Pop-Location
+    }
+}
+finally {
+    if ($null -ne $SavedPythonPath) { $env:PYTHONPATH = $SavedPythonPath }
+    if ($null -ne $SavedPythonHome) { $env:PYTHONHOME = $SavedPythonHome }
+}
+if ($SmokeExitCode -ne 0) {
+    Get-Content -LiteralPath $SmokeLog -Tail 40
+    throw "便携版内置 mitmdump 自检失败，返回码 $SmokeExitCode。"
+}
 
 Compress-Archive -LiteralPath $PackageDir -DestinationPath $ZipPath -CompressionLevel Optimal
 
