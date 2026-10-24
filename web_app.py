@@ -103,6 +103,7 @@ def build_mitm_command(ip: str, port: int) -> list[str]:
         "-s", str(PLUGIN_FILE),
         "--allow-hosts", r"chsi-idphotosrv\.oss-cn-shanghai\.aliyuncs\.com",
         "--set", "flow_detail=0",
+        # warning 仍会显示 TLS 错误，同时避免 info 日志输出 WireGuard 私钥。
         "--set", "termlog_verbosity=warn",
     ]
 

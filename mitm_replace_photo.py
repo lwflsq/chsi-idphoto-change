@@ -32,6 +32,7 @@ import glob
 import hashlib
 import os
 import re
+import sys
 import time
 
 from mitmproxy import http
@@ -50,12 +51,30 @@ IMG_EXT = ("*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG")
 
 def ctx_log(flow, msg: str) -> None:
     line = f"[{time.strftime('%H:%M:%S')}] {msg}"
-    print(line, flush=True)
+    # Windows 的冻结程序可能仍把 stdout 初始化为 GBK。日志中的 ✓/⇢/✔
+    # 会因此抛 UnicodeEncodeError，并中断 mitmproxy 的请求回调。先落盘，
+    # 再把管道统一切成 UTF-8；控制台日志失败也绝不能影响照片替换。
     try:
         with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(line + "\n")
     except Exception:
         pass
+    try:
+        if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        print(line, flush=True)
+    except Exception:
+        pass
+
+
+def load(loader) -> None:
+    """明确显示打包后的插件已经被 mitmproxy 成功加载。"""
+    ctx_log(None, f"✓ 照片替换插件已加载（{os.path.basename(__file__)}）")
+
+
+def running() -> None:
+    """在代理核心和监听端口就绪后给出可见信号。"""
+    ctx_log(None, "✓ WireGuard 代理核心已就绪，等待手机流量")
 
 
 def _abort(flow, reason: str) -> None:

@@ -50,6 +50,11 @@ App 的上传鉴权（JWE 加密 + RSA 封装）全在客户端算好后由服�
 Windows 防火墙若询问是否允许 Python 监听，请允许专用网络访问。WireGuard 默认使用
 UDP `51820`。
 
+OSS 照片上传使用 HTTPS，手机需要信任运行代理这台电脑生成的 mitmproxy CA。若旧电脑
+可以上传、新电脑只有目标上传步骤提示无网络，可以把旧电脑的 `%USERPROFILE%\.mitmproxy`
+完整复制到新电脑的同一位置（仅限自己的可信设备），或在手机上信任新电脑生成的
+`mitmproxy-ca-cert.cer`。不要公开分享 `mitmproxy-ca.pem`，其中包含 CA 私钥。
+
 启动器支持 `-Check`（检查环境但不启动网页）和 `-Port 8766`（更换网页端口）。
 Windows 启动文件需要保留 CRLF 换行，PowerShell 文件需要保留 UTF-8 BOM；仓库已添加换行规则。
 
