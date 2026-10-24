@@ -5,7 +5,7 @@
 )
 
 $ErrorActionPreference = "Stop"
-$ProjectRoot = $PSScriptRoot
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $ProjectRoot
 $env:PYTHONIOENCODING = "utf-8"
 $env:PYTHONUTF8 = "1"

@@ -3,7 +3,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$WindowsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ProjectRoot = Split-Path -Parent $WindowsDir
 $Python = Join-Path $ProjectRoot '.venv\Scripts\python.exe'
 $BuildRoot = Join-Path $ProjectRoot '.build-portable'
 $DistRoot = Join-Path $ProjectRoot 'dist'
@@ -25,7 +26,7 @@ function Remove-ProjectPath {
 }
 
 if (-not (Test-Path -LiteralPath $Python)) {
-    throw '未找到 .venv。请先在项目目录运行“启动网页控制台.bat”，让它创建构建环境。'
+    throw '未找到 .venv。请先运行“windows\启动网页控制台.bat”，让它创建构建环境。'
 }
 
 if (-not $SkipDependencyInstall) {
@@ -69,7 +70,7 @@ $PyInstallerDist = Join-Path $BuildRoot 'dist'
 if ($LASTEXITCODE -ne 0) { throw 'PyInstaller 构建失败。' }
 
 Move-Item -LiteralPath (Join-Path $PyInstallerDist 'chsi-idphoto-swap') -Destination $PackageDir
-Copy-Item -LiteralPath (Join-Path $ProjectRoot 'PORTABLE_README.txt') -Destination (Join-Path $PackageDir '使用说明.txt')
+Copy-Item -LiteralPath (Join-Path $WindowsDir 'PORTABLE_README.txt') -Destination (Join-Path $PackageDir '使用说明.txt')
 Set-Content -LiteralPath (Join-Path $PackageDir '启动.bat') -Encoding Ascii -Value "@echo off`r`ncd /d `"%~dp0`"`r`nchsi-idphoto-swap.exe`r`npause`r`n"
 
 # 在不继承外部 Python 路径的环境中加载内置 mitmdump；缺少冻结依赖时立即终止构建。

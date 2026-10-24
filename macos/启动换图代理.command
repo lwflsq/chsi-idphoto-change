@@ -7,12 +7,14 @@
 #        （手机还要靠它联网走完后续步骤）→ 按任意键收尾
 #
 #  前提：手机和 Mac 连在同一个局域网（同一个 Wi-Fi），
-#        手机上装了 WireGuard 并已导入本目录的 wg-client.conf。
+#        手机上装了 WireGuard 并已导入项目根目录的 wg-client.conf。
 #
 #  ⚠️ 这个终端窗口全程不要关，关了代理就停、手机会断网
 # ============================================================
 
-cd "$(dirname "$0")" || exit 1
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT" || exit 1
 
 MITM=/opt/homebrew/bin/mitmdump
 [ -x "$MITM" ] || MITM=$(command -v mitmdump)

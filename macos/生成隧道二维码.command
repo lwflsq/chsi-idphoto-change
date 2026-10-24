@@ -7,12 +7,14 @@
 #    · ~/.mitmproxy/wireguard.conf 里的密钥重建过
 #    · 第一次给手机配隧道
 #
-#  产出（本脚本同目录）：
+#  产出（项目根目录）：
 #    wg-client.conf     配置文本（扫码失败时可手动录入）
 #    wg-client-qr.png   二维码（生成后自动打开）
 # ============================================================
 
-cd "$(dirname "$0")" || exit 1
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT" || exit 1
 
 # ---------- 找一个能用的 python ----------
 PY=""
