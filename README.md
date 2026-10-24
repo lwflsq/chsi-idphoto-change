@@ -122,7 +122,9 @@ chmod +x macos/*.command
 
 ### WireGuard 有握手，但上传时提示无网络
 
-优先查看网页日志是否出现 TLS / certificate 错误。旧电脑可用、新电脑不可用时，通常是手机只信任旧电脑的 CA。迁移旧 `.mitmproxy` 目录，或让手机信任新电脑生成的 CA。
+WireGuard 握手只表示手机能够连接电脑，不代表学信网 App 已信任代理签发的 HTTPS 证书。先查看网页日志中是否出现 TLS / certificate 错误，再确认手机已经信任当前电脑生成的 `mitmproxy-ca-cert.cer`。部分 Android App 不接受普通用户证书，已 root 的设备可能需要将证书加入系统信任区。
+
+如果此前在另一台电脑上使用过本项目，也可以迁移那台电脑的 `.mitmproxy` 目录，以继续使用手机已经信任的 CA。
 
 ### 手机无法连接电脑
 
