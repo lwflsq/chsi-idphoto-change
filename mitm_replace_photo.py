@@ -126,26 +126,31 @@ _seen_clients: set[str] = set()
 
 
 def client_connected(client) -> None:
-    """手机连入隧道（对端是 10.0.0.x）时报一次。
+    """WireGuard 客户端开始传输数据时提示一次。
 
     mitmproxy 自己的 connect/disconnect 日志被 termlog_verbosity=warn 屏蔽了，
-    这条"手机到底连上没有"的信号由本插件补上，去重避免每条 TCP 连接都刷屏。
+    这条信号由本插件补上。不同 Windows 环境报告的客户端地址可能是
+    隧道地址或物理地址，因此不能只接受 10.0.0.x。
     """
     try:
         peers = [getattr(client, "peername", None), getattr(client, "address", None)]
+        host = "未知地址"
         for peer in peers:
             if not peer:
                 continue
             host = peer[0] if isinstance(peer, (list, tuple)) else str(peer)
-            if host.startswith("10.0.0.") and host not in _seen_clients:
-                _seen_clients.add(host)
-                ctx_log(None, f"✓ 手机已连入隧道（{host}）")
-                return
+            if host:
+                break
+        if host not in _seen_clients:
+            _seen_clients.add(host)
+            ctx_log(None, f"✓ 隧道已收到手机流量（{host}）")
     except Exception:
         pass
 
 
 def request(flow: http.HTTPFlow) -> None:
+    # 某些传输路径不会单独触发 client_connected，用首个 HTTP 流量兜底。
+    client_connected(flow.client_conn)
     req = flow.request
     host = req.pretty_host
 
